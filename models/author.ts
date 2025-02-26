@@ -50,9 +50,7 @@ var AuthorSchema: Schema<IAuthor> = new Schema(
  * Virtual to generate the author's full name
  * @returns The author's full name if both first and family names exist, otherwise an empty string.
  */
-AuthorSchema
-.virtual('name')
-.get(function () {
+AuthorSchema.virtual('name').get(function () {
   let fullname = '';
   if (this.first_name && this.family_name) {
     fullname = this.family_name + ', ' + this.first_name

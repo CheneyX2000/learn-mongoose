@@ -1,16 +1,20 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import homeRouter from './pages/home';
-import availableRouter from './pages/books_status';
-import bookRouter from './pages/books';
-import authorRouter from './pages/authors';
-import createBookRouter from './pages/create_book';
+import bodyParser from 'body-parser';
+
+import * as Home from './pages/home';
+import * as books_status from './pages/books_status';
+import * as Books from './pages/books';
+import * as Authors from './pages/authors';
+import * as BookDetails from './pages/books_details';
+import * as CreateBook from './pages/create_book';
 
 // Create express app
 const app = express();
 // Setup server port
 const port = 8000;
+
 // setup the server to listen on the given port
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
@@ -34,14 +38,42 @@ db.on('connected', () => {
  * Do not use this in production.
  */
 app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
 // setup the router middleware for this server
-app.use('/home', homeRouter);
+app.get('/home', (_, res: Response) => {
+  Home.show_home(res);
+});
 
-app.use('/available', availableRouter);
+app.get('/available', (_, res: Response) => {
+  books_status.showAllBooksStatus(res);
+})
 
-app.use('/books', bookRouter);
+app.get('/books', async (_, res: Response) => {
+  try {
+    const data = await Books.showBooks();
+    res.send(data);
+  } catch {
+    res.send('No books found');
+  }
+});
 
-app.use('/authors', authorRouter);
+app.get('/authors', (req: Request, res: Response) => {
+  Authors.showAllAuthors(res);
+});
 
-app.use('/newbook', createBookRouter);
+app.get('/book_dtls', (req: Request, res: Response) => {
+  BookDetails.showBookDetails(res, req.query.id as string);
+});
+
+app.get('/newbook', (req: Request, res: Response) => {
+  const { familyName, firstName, genreName, bookTitle } = req.body;
+  if (familyName && firstName && genreName && bookTitle) {
+    CreateBook.new_book(res, familyName, firstName, genreName, bookTitle).catch(err => {
+      res.send('Failed to create new book ' + err);
+    });
+  } else {
+    res.send('Invalid Input');
+  }
+});
